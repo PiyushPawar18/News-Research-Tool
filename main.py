@@ -24,7 +24,11 @@ main_placeholder = st.empty()
 
 # Initialize Groq Client
 try:
-    client = Groq(api_key=GROQ_API_KEY)
+    # Initialize the Groq client with just the API key
+    client = Groq(api_key=GROQ_API_KEY)  # Ensure no unexpected arguments are passed
+except TypeError as e:
+    st.error(f"Initialization error: {e}. Check the Groq library version.")
+    st.stop()
 except Exception as e:
     st.error(f"Failed to initialize Groq client: {e}")
     st.stop()
