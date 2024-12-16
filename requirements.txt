@@ -13,9 +13,7 @@ groq==0.13.0
 requests>=2.26.0
 beautifulsoup4==4.12.2
 
-libmagic==1.0
-python-magic==0.4.27
-python-magic-bin==0.4.14
+
 
 # Optional dependencies to ensure compatibility
 setuptools>=65.5.1
