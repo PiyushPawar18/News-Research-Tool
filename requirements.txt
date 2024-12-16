@@ -14,6 +14,13 @@ requests>=2.26.0
 beautifulsoup4==4.12.2
 #protobuf==4.24.4
 
+google_api_python_client==2.137.0
+gTTS==2.5.2
+Pillow==10.4.0
+python-dotenv==1.0.1
+Requests==2.32.3
+streamlit==1.36.0
+streamlit_option_menu==0.3.13
 
 
 # Optional dependencies to ensure compatibility
