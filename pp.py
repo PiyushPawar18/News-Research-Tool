@@ -31,6 +31,21 @@ except Exception as e:
     st.error(f"Failed to initialize Groq client: {e}")
     st.stop()
 
+try:
+    valid_text = proposed_value.encode("utf-8", errors="replace").decode("utf-8")
+except UnicodeEncodeError as e:
+    raise ValueError(f"Encoding error: {e}")
+
+def clean_text(text):
+    return text.encode("utf-8", errors="ignore").decode("utf-8")
+
+# Use it on loaded data
+data = [clean_text(doc.page_content) for doc in docs]
+st.write(data)
+for doc in data:
+    if not isinstance(doc.page_content, str):
+        st.error("Invalid content in document loader.")
+
 if process_url_clicked:
     if not urls:
         st.error("Please enter at least one URL.")
