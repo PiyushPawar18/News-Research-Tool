@@ -1,1 +1,3 @@
 GROQ_API_KEY ="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"
+groqcloud_apikey="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"
+youtube_api_key="AIzaSyAzBwnasCSnJQjOwWr5OJkURMHPp-P9eFE"
