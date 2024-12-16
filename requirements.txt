@@ -12,6 +12,7 @@ python-magic==0.4.27
 groq==0.13.0  
 requests>=2.26.0
 beautifulsoup4==4.12.2
+protobuf==4.24.4
 
 
 
