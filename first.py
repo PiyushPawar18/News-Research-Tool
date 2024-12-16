@@ -13,9 +13,9 @@ import requests
 from streamlit_option_menu import option_menu
 
 load_dotenv()
+groqcloud_apikey="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"
+youtube_api_key="AIzaSyAzBwnasCSnJQjOwWr5OJkURMHPp-P9eFE"
 
-groqcloud_apikey = os.getenv('GROQCLOUD_API_KEY')
-youtube_api_key = os.getenv('YOUTUBE_API_KEY')
 
 os.environ['GROQ_API_KEY'] = groqcloud_apikey
 
