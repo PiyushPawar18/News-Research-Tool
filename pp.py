@@ -4,7 +4,7 @@ import os
 import faiss
 from sentence_transformers import SentenceTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import UnstructuredURLLoader
+from langchain_community.document_loaders import UnstructuredURLLoader
 from apikey import GROQ_API_KEY  # Ensure this file contains a valid API key
 from groq import Groq
 
