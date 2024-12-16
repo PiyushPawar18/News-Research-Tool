@@ -9,12 +9,12 @@ from apikey import GROQ_API_KEY  # Ensure this file contains a valid API key
 from groq import Groq
 
 # Streamlit UI Setup
-st.title("News Research Tool 📈")
+st.title("News Research Tool \ud83d\udcc8")
 st.sidebar.title("News Article URLs")
 
-# Input for URLs
+# Input for URLs (limit to 10 for practical usage)
 urls = []
-for i in range(10000):
+for i in range(10):
     url = st.sidebar.text_input(f"URL {i+1}")
     if url:
         urls.append(url)
@@ -31,44 +31,51 @@ except Exception as e:
     st.error(f"Failed to initialize Groq client: {e}")
     st.stop()
 
+if process_url_clicked:
+    if not urls:
+        st.error("Please enter at least one URL.")
+    else:
+        try:
+            # Load data from URLs
+            loader = UnstructuredURLLoader(urls=urls)
+            main_placeholder.text("Data Loading... Started \u2705")
+            data = loader.load()
 
-if process_url_clicked and urls:
-    try:
-        # Load data from URLs
-        loader = UnstructuredURLLoader(urls=urls)
-        main_placeholder.text("Data Loading... Started ✅")
-        data = loader.load()
+            # Validate data
+            if not data:
+                st.error("No data loaded from the provided URLs. Please check the URLs.")
+                st.stop()
 
-        # Split data
-        text_splitter = RecursiveCharacterTextSplitter(
-            separators=['\n\n', '\n', '.', ','],
-            chunk_size=1000
-        )
-        main_placeholder.text("Text Splitting... Started ✅")
-        docs = text_splitter.split_documents(data)
-        texts = [doc.page_content for doc in docs]
+            # Split data
+            text_splitter = RecursiveCharacterTextSplitter(
+                separators=['\n\n', '\n', '.', ','],
+                chunk_size=1000
+            )
+            main_placeholder.text("Text Splitting... Started \u2705")
+            docs = text_splitter.split_documents(data)
+            texts = [doc.page_content for doc in docs]
 
-        # Create embeddings using SentenceTransformer
-        model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-        embeddings = model.encode(texts)
-        main_placeholder.text("Embedding Vector Building... Completed ✅")
+            # Create embeddings using SentenceTransformer
+            model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+            embeddings = model.encode(texts)
+            main_placeholder.text("Embedding Vector Building... Completed \u2705")
 
-        # Create FAISS index and add embeddings
-        index = faiss.IndexFlatL2(embeddings.shape[1])
-        index.add(embeddings)
-        vectorstore = {
-            "index": index,
-            "texts": texts,
-            "metadata": [doc.metadata for doc in docs]
-        }
+            # Create FAISS index and add embeddings
+            index = faiss.IndexFlatL2(embeddings.shape[1])
+            index.add(embeddings)
+            vectorstore = {
+                "index": index,
+                "texts": texts,
+                "metadata": [doc.metadata for doc in docs]
+            }
 
-        # Save FAISS index to a pickle file
-        with open(file_path, "wb") as f:
-            pickle.dump(vectorstore, f)
-        main_placeholder.text("FAISS Index Saved ✅")
-        st.success("URLs processed successfully!")
-    except Exception as e:
-        st.error(f"Error processing URLs: {e}")
+            # Save FAISS index to a pickle file
+            with open(file_path, "wb") as f:
+                pickle.dump(vectorstore, f)
+            main_placeholder.text("FAISS Index Saved \u2705")
+            st.success("URLs processed successfully!")
+        except Exception as e:
+            st.error(f"Error processing URLs: {e}")
 
 query = main_placeholder.text_input("Question: ")
 if query:
@@ -78,7 +85,6 @@ if query:
                 vectorstore = pickle.load(f)
                 index = vectorstore["index"]
                 texts = vectorstore["texts"]
-                metadata = vectorstore["metadata"]
 
                 # Retrieve top 5 relevant documents
                 model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
