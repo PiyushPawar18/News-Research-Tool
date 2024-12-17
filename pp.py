@@ -91,14 +91,20 @@ if query:
             vectorstore = pickle.load(f)
 
             # Perform similarity search using the vectorstore
-            result = vectorstore.similarity_search(query, k=1)
+            results = vectorstore.similarity_search(query, k=1)
 
-            # Display the result
-            st.header("Answer")
-            st.write(result[0].text)  # Access the 'text' attribute of the Document object
+            # Check if results are available
+            if results:
+                st.header("Answer")
+                # Access the content using appropriate attributes
+                st.write(results[0].page_content)  # Access the page_content attribute for displaying text
 
-            # Display sources (if available)
-            st.subheader("Sources:")
-            st.write(result[0].metadata.get('source', 'No source available'))  # Access source metadata if available
+                # Display sources (if available)
+                source_info = results[0].metadata.get('source', 'No source available')
+                st.subheader("Sources:")
+                st.write(source_info)
+            else:
+                st.error("No relevant results found!")
     else:
         st.error("No FAISS index found. Please process URLs first!")
+
