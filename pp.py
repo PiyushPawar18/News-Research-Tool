@@ -1,135 +1,79 @@
+import os
 import streamlit as st
 import pickle
-import os
-import faiss
-from sentence_transformers import SentenceTransformer
+import time
+from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import UnstructuredURLLoader
-from apikey import GROQ_API_KEY  # Ensure this file contains a valid API key
-from groq import Groq
+from langchain.document_loaders import UnstructuredURLLoader
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
 
-# Streamlit UI Setup
-st.title("News Research Tool \ud83d\udcc8")
+from apikey import GROQ_API_KEY  # Ensure this file contains a valid Groq API key
+from groq import Groq
+from langchain.chat_models import ChatGroq
+from langchain.embeddings import GroqEmbeddings
+
+# Load API key
+os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+
+# Streamlit App UI
+st.title("RockyBot: News Research Tool 📈")
 st.sidebar.title("News Article URLs")
 
-# Input for URLs (limit to 10 for practical usage)
 urls = []
-for i in range(10):
+for i in range(3):
     url = st.sidebar.text_input(f"URL {i+1}")
-    if url:
-        urls.append(url)
+    urls.append(url)
 
 process_url_clicked = st.sidebar.button("Process URLs")
-file_path = "faiss_store.pkl"
+file_path = "faiss_store_groq.pkl"
+
 main_placeholder = st.empty()
 
-# Initialize Groq Client
-try:
-    client = Groq(api_key=GROQ_API_KEY)
-    st.success("Groq client initialized successfully!")
-except Exception as e:
-    st.error(f"Failed to initialize Groq client: {e}")
-    st.stop()
-
-try:
-    valid_text = proposed_value.encode("utf-8", errors="replace").decode("utf-8")
-except UnicodeEncodeError as e:
-    raise ValueError(f"Encoding error: {e}")
-
-def clean_text(text):
-    return text.encode("utf-8", errors="ignore").decode("utf-8")
-
-# Use it on loaded data
-data = [clean_text(doc.page_content) for doc in docs]
-st.write(data)
-for doc in data:
-    if not isinstance(doc.page_content, str):
-        st.error("Invalid content in document loader.")
+# Initialize Groq LLM
+llm = ChatGroq(temperature=0.9, max_tokens=500)
 
 if process_url_clicked:
-    if not urls:
-        st.error("Please enter at least one URL.")
-    else:
-        try:
-            # Load data from URLs
-            loader = UnstructuredURLLoader(urls=urls)
-            main_placeholder.text("Data Loading... Started \u2705")
-            data = loader.load()
+    # Load data
+    loader = UnstructuredURLLoader(urls=urls)
+    main_placeholder.text("Data Loading...Started...✅✅✅")
+    data = loader.load()
+    
+    # Split data
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=['\n\n', '\n', '.', ','],
+        chunk_size=1000
+    )
+    main_placeholder.text("Text Splitter...Started...✅✅✅")
+    docs = text_splitter.split_documents(data)
+    
+    # Create embeddings using Groq
+    embeddings = GroqEmbeddings(api_key=GROQ_API_KEY)
+    vectorstore_groq = FAISS.from_documents(docs, embeddings)
+    main_placeholder.text("Embedding Vector Started Building...✅✅✅")
+    time.sleep(2)
 
-            # Validate data
-            if not data:
-                st.error("No data loaded from the provided URLs. Please check the URLs.")
-                st.stop()
+    # Save the FAISS index to a pickle file
+    with open(file_path, "wb") as f:
+        pickle.dump(vectorstore_groq, f)
 
-            # Split data
-            text_splitter = RecursiveCharacterTextSplitter(
-                separators=['\n\n', '\n', '.', ','],
-                chunk_size=1000
-            )
-            main_placeholder.text("Text Splitting... Started \u2705")
-            docs = text_splitter.split_documents(data)
-            texts = [doc.page_content for doc in docs]
-
-            # Create embeddings using SentenceTransformer
-            model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-            embeddings = model.encode(texts)
-            main_placeholder.text("Embedding Vector Building... Completed \u2705")
-
-            # Create FAISS index and add embeddings
-            index = faiss.IndexFlatL2(embeddings.shape[1])
-            index.add(embeddings)
-            vectorstore = {
-                "index": index,
-                "texts": texts,
-                "metadata": [doc.metadata for doc in docs]
-            }
-
-            # Save FAISS index to a pickle file
-            with open(file_path, "wb") as f:
-                pickle.dump(vectorstore, f)
-            main_placeholder.text("FAISS Index Saved \u2705")
-            st.success("URLs processed successfully!")
-        except Exception as e:
-            st.error(f"Error processing URLs: {e}")
-
+# Query Section
 query = main_placeholder.text_input("Question: ")
 if query:
-    try:
-        if os.path.exists(file_path):
-            with open(file_path, "rb") as f:
-                vectorstore = pickle.load(f)
-                index = vectorstore["index"]
-                texts = vectorstore["texts"]
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as f:
+            vectorstore = pickle.load(f)
+            chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=vectorstore.as_retriever())
+            result = chain({"question": query}, return_only_outputs=True)
+            
+            # Display Results
+            st.header("Answer")
+            st.write(result["answer"])
 
-                # Retrieve top 5 relevant documents
-                model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-                query_embedding = model.encode([query])
-                distances, indices = index.search(query_embedding, k=5)
-                retrieved_docs = [texts[i] for i in indices[0]]
-
-                # Construct context for Groq completion
-                context = "\n".join(retrieved_docs)
-
-                # Get answer from Groq
-                chat_completion = client.chat.completions.create(
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": f"Context: {context}\n\nQuestion: {query}",
-                        }
-                    ],
-                    model="llama3-8b-8192"
-                )
-                result = chat_completion.choices[0].message.content
-
-                st.header("Answer")
-                st.write(result)
-
-                # Display sources
+            # Display Sources, if available
+            sources = result.get("sources", "")
+            if sources:
                 st.subheader("Sources:")
-                for doc in retrieved_docs:
-                    st.write(doc)
-        else:
-            st.error("FAISS index file not found. Please process URLs first.")
-    except Exception as e:
-        st.error(f"Error during query processing: {e}")
+                sources_list = sources.split("\n")  # Split the sources by newline
+                for source in sources_list:
+                    st.write(source)
