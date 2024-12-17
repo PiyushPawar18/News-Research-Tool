@@ -32,10 +32,27 @@ file_path = "faiss_store_groq.pkl"
 main_placeholder = st.empty()
 
 # Function to validate data loading
+# Function to validate data loading
 def validate_data(data):
     if not data:
         st.error("No data fetched. Please check the provided URLs.")
         st.stop()
+    else:
+        st.success(f"Fetched {len(data)} documents.")
+
+# Process URLs
+if process_url_clicked:
+    # Step 1: Load data
+    st.info("Loading data from URLs...")
+    loader = UnstructuredURLLoader(urls=urls)
+    try:
+        data = loader.load()
+        validate_data(data)
+        st.success("Data loading complete! ✅")
+    except Exception as e:
+        st.error(f"Error fetching or processing URLs: {e}")
+        st.stop()
+
 
 # Function to validate document chunks
 def validate_chunks(docs):
