@@ -15,6 +15,7 @@ beautifulsoup4==4.12.2
 #protobuf==4.24.4
 langchain-huggingface==0.0.3
 google_api_python_client==2.137.0
+transformers==4.46.3
 
 nltk==3.9.1
 gTTS==2.5.2
