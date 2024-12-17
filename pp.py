@@ -11,7 +11,6 @@ from langchain.vectorstores import FAISS
 from apikey import GROQ_API_KEY  # Ensure this file contains a valid Groq API key
 from groq import Groq
 
-from langchain.embeddings import GroqEmbeddings
 
 # Load API key
 os.environ["GROQ_API_KEY"] = GROQ_API_KEY
