@@ -16,7 +16,7 @@ beautifulsoup4==4.12.2
 langchain-huggingface==0.0.3
 google_api_python_client==2.137.0
 
-nltk=3.9.1
+nltk==3.9.1
 gTTS==2.5.2
 Pillow==10.4.0
 #python-dotenv==1.0.1
