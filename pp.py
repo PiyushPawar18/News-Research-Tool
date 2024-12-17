@@ -10,7 +10,7 @@ from langchain.vectorstores import FAISS
 
 from apikey import GROQ_API_KEY  # Ensure this file contains a valid Groq API key
 from groq import Groq
-from langchain.chat_models import ChatGroq
+
 from langchain.embeddings import GroqEmbeddings
 
 # Load API key
