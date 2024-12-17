@@ -82,6 +82,7 @@ if process_url_clicked:
         st.success("Embedding vectorstore saved successfully! ✅")
 
 # Query Section
+# Query Section
 st.header("Ask a Question:")
 query = st.text_input("Enter your question here:")
 if query:
@@ -94,10 +95,10 @@ if query:
 
             # Display the result
             st.header("Answer")
-            st.write(result[0]['text'])  # Display the most relevant document
+            st.write(result[0].text)  # Access the 'text' attribute of the Document object
 
-            # Display sources
+            # Display sources (if available)
             st.subheader("Sources:")
-            st.write(result[0].get('source', 'No source available'))
+            st.write(result[0].metadata.get('source', 'No source available'))  # Access source metadata if available
     else:
         st.error("No FAISS index found. Please process URLs first!")
