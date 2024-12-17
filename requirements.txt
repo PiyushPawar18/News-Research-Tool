@@ -13,7 +13,7 @@ groq==0.13.0
 requests>=2.26.0
 beautifulsoup4==4.12.2
 #protobuf==4.24.4
-langchain-huggingface==0.0.5
+langchain-huggingface==0.1.2
 google_api_python_client==2.137.0
 gTTS==2.5.2
 Pillow==10.4.0
