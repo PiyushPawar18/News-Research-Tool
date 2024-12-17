@@ -10,7 +10,9 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from dotenv import load_dotenv
 
 # Load environment variables
-nltk.download('punkt')
+nltk.download('punkt')  # Ensure punkt is downloaded
+nltk.download('averaged_perceptron_tagger')  # Download the missing resource
+
 load_dotenv()
 
 # Load GROQ API Key
