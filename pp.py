@@ -1,22 +1,19 @@
 import os
 import streamlit as st
 import pickle
-import time
 import nltk
-from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.chains import RetrievalQA
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredURLLoader
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables
+nltk.download('punkt')
 load_dotenv()
 
-# Download necessary NLTK data
-nltk.download('punkt')
-
-# Load GROQ API Key from environment variables
+# Load GROQ API Key
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Streamlit App UI
@@ -69,7 +66,7 @@ if process_url_clicked:
     validate_chunks(docs)
     st.success(f"Text successfully split into {len(docs)} chunks! ✅")
     
-    # Step 3: Create embeddings using HuggingFace
+    # Step 3: Create embeddings using Sentence Transformers
     st.info("Generating embeddings...")
     try:
         embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -87,35 +84,20 @@ if process_url_clicked:
 # Query Section
 st.header("Ask a Question:")
 query = st.text_input("Enter your question here:")
-
 if query:
     if os.path.exists(file_path):
-        # Load the vectorstore from the pickle file
         with open(file_path, "rb") as f:
             vectorstore = pickle.load(f)
 
-            # Create the chain for the QA system with a LLM
-            chain = RetrievalQAWithSourcesChain.from_llm(
-                llm=None,  # Set to None or integrate an actual LLM (e.g., OpenAI) here
-                retriever=vectorstore.as_retriever()
-            )
-            try:
-                st.info("Fetching results...")
-                result = chain({"question": query}, return_only_outputs=True)
+            # Perform similarity search using the vectorstore
+            result = vectorstore.similarity_search(query, k=1)
 
-                # Display Results
-                st.header("Answer")
-                st.write(result["answer"])
+            # Display the result
+            st.header("Answer")
+            st.write(result[0]['text'])  # Display the most relevant document
 
-                # Display Sources
-                sources = result.get("sources", "")
-                if sources:
-                    st.subheader("Sources:")
-                    sources_list = sources.split("\n")
-                    for source in sources_list:
-                        st.write(source)
-
-            except Exception as e:
-                st.error(f"Error during query processing: {e}")
+            # Display sources
+            st.subheader("Sources:")
+            st.write(result[0].get('source', 'No source available'))
     else:
         st.error("No FAISS index found. Please process URLs first!")
