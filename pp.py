@@ -1,8 +1,9 @@
 import os
 import streamlit as st
 import pickle
+import time
 import nltk
-from langchain.chains import RetrievalQA
+from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredURLLoader
 from langchain_community.vectorstores import FAISS
@@ -12,8 +13,6 @@ from dotenv import load_dotenv
 # Load environment variables
 nltk.download('punkt')  # Ensure punkt is downloaded
 nltk.download('averaged_perceptron_tagger')  # Download the missing resource
-
-load_dotenv()
 
 # Load GROQ API Key
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -34,27 +33,10 @@ file_path = "faiss_store_groq.pkl"
 main_placeholder = st.empty()
 
 # Function to validate data loading
-# Function to validate data loading
 def validate_data(data):
     if not data:
         st.error("No data fetched. Please check the provided URLs.")
         st.stop()
-    else:
-        st.success(f"Fetched {len(data)} documents.")
-
-# Process URLs
-if process_url_clicked:
-    # Step 1: Load data
-    st.info("Loading data from URLs...")
-    loader = UnstructuredURLLoader(urls=urls)
-    try:
-        data = loader.load()
-        validate_data(data)
-        st.success("Data loading complete! ✅")
-    except Exception as e:
-        st.error(f"Error fetching or processing URLs: {e}")
-        st.stop()
-
 
 # Function to validate document chunks
 def validate_chunks(docs):
@@ -101,29 +83,31 @@ if process_url_clicked:
         st.success("Embedding vectorstore saved successfully! ✅")
 
 # Query Section
-# Query Section
 st.header("Ask a Question:")
 query = st.text_input("Enter your question here:")
 if query:
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
             vectorstore = pickle.load(f)
-
-            # Perform similarity search using the vectorstore
-            results = vectorstore.similarity_search(query, k=1)
-
-            # Check if results are available
-            if results:
+            chain = RetrievalQAWithSourcesChain.from_llm(
+                llm=None,  # Replace with your preferred LLM, if any
+                retriever=vectorstore.as_retriever()
+            )
+            try:
+                st.info("Fetching results...")
+                result = chain({"question": query}, return_only_outputs=True)
+                # Display Results
                 st.header("Answer")
-                # Access the content using appropriate attributes
-                st.write(results[0].page_content)  # Access the page_content attribute for displaying text
+                st.write(result["answer"])
 
-                # Display sources (if available)
-                source_info = results[0].metadata.get('source', 'No source available')
-                st.subheader("Sources:")
-                st.write(source_info)
-            else:
-                st.error("No relevant results found!")
+                # Display Sources
+                sources = result.get("sources", "")
+                if sources:
+                    st.subheader("Sources:")
+                    sources_list = sources.split("\n")
+                    for source in sources_list:
+                        st.write(source)
+            except Exception as e:
+                st.error(f"Error during query processing: {e}")
     else:
         st.error("No FAISS index found. Please process URLs first!")
-
