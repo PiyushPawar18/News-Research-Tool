@@ -10,9 +10,13 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from dotenv import load_dotenv
 
-# Load environment variables
-nltk.download('punkt_tab')
-# Load GROQ API Key
+# Load environment variables from .env file
+load_dotenv()
+
+# Download necessary NLTK data
+nltk.download('punkt')
+
+# Load GROQ API Key from environment variables
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Streamlit App UI
@@ -65,7 +69,7 @@ if process_url_clicked:
     validate_chunks(docs)
     st.success(f"Text successfully split into {len(docs)} chunks! ✅")
     
-    # Step 3: Create embeddings using Sentence Transformers
+    # Step 3: Create embeddings using HuggingFace
     st.info("Generating embeddings...")
     try:
         embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -83,17 +87,22 @@ if process_url_clicked:
 # Query Section
 st.header("Ask a Question:")
 query = st.text_input("Enter your question here:")
+
 if query:
     if os.path.exists(file_path):
+        # Load the vectorstore from the pickle file
         with open(file_path, "rb") as f:
             vectorstore = pickle.load(f)
+
+            # Create the chain for the QA system with a LLM
             chain = RetrievalQAWithSourcesChain.from_llm(
-                llm=None,  # Replace with your preferred LLM, if any
+                llm=None,  # Set to None or integrate an actual LLM (e.g., OpenAI) here
                 retriever=vectorstore.as_retriever()
             )
             try:
                 st.info("Fetching results...")
                 result = chain({"question": query}, return_only_outputs=True)
+
                 # Display Results
                 st.header("Answer")
                 st.write(result["answer"])
@@ -105,6 +114,7 @@ if query:
                     sources_list = sources.split("\n")
                     for source in sources_list:
                         st.write(source)
+
             except Exception as e:
                 st.error(f"Error during query processing: {e}")
     else:
