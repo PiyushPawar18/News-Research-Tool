@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
- nltk.download('punkt_tab')
+nltk.download('punkt_tab')
 # Load GROQ API Key
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
