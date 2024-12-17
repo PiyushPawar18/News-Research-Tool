@@ -5,12 +5,11 @@ import time
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredURLLoader
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
+from langchain.embeddings import SentenceTransformerEmbeddings  # Import SentenceTransformer
 
 from apikey import GROQ_API_KEY  # Ensure this file contains a valid Groq API key
-from groq import Groq  # Use the Groq module directly
-
+from groq import Groq  # Use the Groq API for language model queries
 
 # Load API key
 os.environ["GROQ_API_KEY"] = GROQ_API_KEY
@@ -29,12 +28,12 @@ file_path = "faiss_store_groq.pkl"
 
 main_placeholder = st.empty()
 
-# Initialize Groq directly (without ChatGroq)
-groq_api = Groq(api_key=GROQ_API_KEY)
+# Initialize Groq for LLM
+llm = Groq(api_key=GROQ_API_KEY)
 
 if process_url_clicked:
     # Load data
-    loader = UnstructuredURLLoader(urls=urls)
+    loader = UnstructuredURLLoader(urls=[url for url in urls if url.strip()])  # Ensure valid URLs
     main_placeholder.text("Data Loading...Started...✅✅✅")
     data = loader.load()
     
@@ -46,8 +45,8 @@ if process_url_clicked:
     main_placeholder.text("Text Splitter...Started...✅✅✅")
     docs = text_splitter.split_documents(data)
     
-    # Create embeddings using Groq
-    embeddings = GroqEmbeddings(api_key=GROQ_API_KEY)
+    # Use SentenceTransformer for embeddings
+    embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
     vectorstore_groq = FAISS.from_documents(docs, embeddings)
     main_placeholder.text("Embedding Vector Started Building...✅✅✅")
     time.sleep(2)
@@ -62,7 +61,7 @@ if query:
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
             vectorstore = pickle.load(f)
-            chain = RetrievalQAWithSourcesChain.from_llm(llm=groq_api, retriever=vectorstore.as_retriever())
+            chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=vectorstore.as_retriever())
             result = chain({"question": query}, return_only_outputs=True)
             
             # Display Results
