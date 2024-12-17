@@ -7,11 +7,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredURLLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-from langchain_community.chat_models import ChatGroq
-
 
 from apikey import GROQ_API_KEY  # Ensure this file contains a valid Groq API key
-from groq import Groq
+from groq import Groq  # Use the Groq module directly
 
 
 # Load API key
@@ -31,8 +29,8 @@ file_path = "faiss_store_groq.pkl"
 
 main_placeholder = st.empty()
 
-# Initialize Groq LLM
-llm = ChatGroq(temperature=0.9, max_tokens=500)
+# Initialize Groq directly (without ChatGroq)
+groq_api = Groq(api_key=GROQ_API_KEY)
 
 if process_url_clicked:
     # Load data
@@ -64,7 +62,7 @@ if query:
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
             vectorstore = pickle.load(f)
-            chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=vectorstore.as_retriever())
+            chain = RetrievalQAWithSourcesChain.from_llm(llm=groq_api, retriever=vectorstore.as_retriever())
             result = chain({"question": query}, return_only_outputs=True)
             
             # Display Results
