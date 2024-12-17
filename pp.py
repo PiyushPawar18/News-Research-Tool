@@ -32,28 +32,40 @@ main_placeholder = st.empty()
 llm = Groq(api_key=GROQ_API_KEY)
 
 if process_url_clicked:
-    # Load data
-    loader = UnstructuredURLLoader(urls=[url for url in urls if url.strip()])  # Ensure valid URLs
-    main_placeholder.text("Data Loading...Started...✅✅✅")
-    data = loader.load()
-    
-    # Split data
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=['\n\n', '\n', '.', ','],
-        chunk_size=1000
-    )
-    main_placeholder.text("Text Splitter...Started...✅✅✅")
-    docs = text_splitter.split_documents(data)
-    
-    # Use SentenceTransformer for embeddings
-    embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    vectorstore_groq = FAISS.from_documents(docs, embeddings)
-    main_placeholder.text("Embedding Vector Started Building...✅✅✅")
-    time.sleep(2)
+   # Data Loading
+loader = UnstructuredURLLoader(urls=[url for url in urls if url.strip()])
+main_placeholder.text("Data Loading...Started...✅✅✅")
+data = loader.load()
 
-    # Save the FAISS index to a pickle file
-    with open(file_path, "wb") as f:
-        pickle.dump(vectorstore_groq, f)
+# Validate Data
+if not data:
+    st.error("No data fetched. Please check the provided URLs.")
+    st.stop()
+
+# Text Splitting
+text_splitter = RecursiveCharacterTextSplitter(
+    separators=['\n\n', '\n', '.', ','],
+    chunk_size=1000
+)
+main_placeholder.text("Text Splitter...Started...✅✅✅")
+docs = text_splitter.split_documents(data)
+
+# Validate Chunks
+if not docs:
+    st.error("No document chunks created. Please verify the input data.")
+    st.stop()
+
+# Print first few chunks for debugging
+st.write(f"Number of document chunks: {len(docs)}")
+for i, doc in enumerate(docs[:5]):
+    st.write(f"Chunk {i+1}: {doc.page_content}")
+
+# Embedding Generation
+from langchain.embeddings import SentenceTransformerEmbeddings
+embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+vectorstore_groq = FAISS.from_documents(docs, embeddings)
+main_placeholder.text("Embedding Vector Started Building...✅✅✅")
+
 
 # Query Section
 query = main_placeholder.text_input("Question: ")
